@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Markdown Selector+Readability (with UI)
 // @namespace    md-selector
-// @version      0.2.2
+// @version      0.2.3
 // @description  Select DOM, navigate with arrows, convert to Markdown (Turndown+GFM), Readability mode, floating toolbar + settings.
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -611,6 +611,7 @@
           showToast(okMsg);
         }).catch((err) => {
           console.error('Clipboard write failed:', err);
+          alert('Clipboard write failed: ' + err.message);
           fallbackCopy(md);
         });
         return;
@@ -619,6 +620,7 @@
       fallbackCopy(md);
     } catch (e) {
       console.error('Copy error:', e);
+      alert('Copy error: ' + e.message);
       fallbackCopy(md);
     }
 
@@ -636,10 +638,12 @@
         if (success) {
           showToast(okMsg);
         } else {
+          alert('execCommand copy returned false');
           showToast('Copy failed (execCommand returned false)');
         }
       } catch (e) {
         console.error('execCommand copy failed:', e);
+        alert('execCommand copy failed: ' + e.message);
         showToast('Copy failed (see console)');
       } finally {
         ta.remove();
