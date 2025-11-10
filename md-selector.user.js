@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Markdown Selector+Readability (with UI)
 // @namespace    md-selector
-// @version      0.2.4
+// @version      0.3.0
 // @description  Select DOM, navigate with arrows, convert to Markdown (Turndown+GFM), Readability mode, floating toolbar + settings.
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -25,7 +25,7 @@
     hotkeyToggle: 'Alt+M',
     useGFM: true,
     includeReadability: true,
-    showToolbar: true,
+    showToolbar: false,
     highlightColor: '#6366f1'
   };
 
@@ -81,10 +81,10 @@
       toolbar.id = ids.toolbar;
       toolbar.innerHTML = `
         <button data-act="toggle" title="Toggle selection (Alt+M)">Select</button>
-        <button data-act="copy" title="Copy selection to Markdown (Enter)">Copy MD</button>
-        <button data-act="readability" title="Readability → Markdown">Readability</button>
-        <button data-act="edit" title="Edit in VS Code (requires protocol handler)">Edit</button>
-        <button data-act="settings" title="Settings">Settings</button>
+        <button data-act="copy" title="Copy selection to Markdown (Click)">Copy MD</button>
+        <button data-act="readability" title="Readability → Markdown (R)">Readability</button>
+        <button data-act="edit" title="Edit in VS Code">Edit</button>
+        <button data-act="settings" title="Settings">⚙</button>
       `;
       document.body.appendChild(toolbar);
       toolbar.addEventListener('click', onToolbarClick);
@@ -430,18 +430,20 @@
     if (state.active) return;
     state.active = true;
     document.addEventListener('mousemove', onMouseMove, true);
+    document.addEventListener('click', onClick, true);
     document.addEventListener('keydown', onKeyDown, true);
     document.addEventListener('scroll', onScroll, true);
     // Initialize with element near center
     const el = document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
     setCurrent(findSelectable(el) || document.body, false);
-    showToast('Selector ON (Arrows navigate · Enter copy · R readability · Esc exit)');
+    showToast('Selector ON (Click to copy · Arrows navigate · R readability · Esc exit)');
   }
 
   function deactivate() {
     state.active = false;
     state.current = null;
     document.removeEventListener('mousemove', onMouseMove, true);
+    document.removeEventListener('click', onClick, true);
     document.removeEventListener('keydown', onKeyDown, true);
     document.removeEventListener('scroll', onScroll, true);
     overlay.style.opacity = '0';
@@ -467,7 +469,28 @@
   }
 
   function onScroll() {
-    if (state.active && state.current) updateOverlay(state.current);
+    if (state.active && state.current) {
+      updateOverlay(state.current);
+      // Refresh current element under mouse after scroll
+      requestAnimationFrame(() => {
+        if (state.active) {
+          const el = document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
+          const selectable = findSelectable(el);
+          if (selectable && selectable !== state.current) {
+            setCurrent(selectable, false);
+          }
+        }
+      });
+    }
+  }
+
+  function onClick(e) {
+    if (!state.active) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // Copy current selection and close
+    convertSelectionToMarkdown(state.current);
+    deactivate();
   }
 
   function onKeyDown(e) {
@@ -480,7 +503,7 @@
       return;
     }
 
-    const keys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Escape','R','r'];
+    const keys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Escape','R','r'];
     if (keys.includes(e.key)) e.preventDefault();
 
     const cur = state.current;
@@ -506,13 +529,12 @@
         if (next) setCurrent(next);
         break;
       }
-      case 'Enter': {
-        convertSelectionToMarkdown(cur);
-        break;
-      }
       case 'r':
       case 'R': {
-        if (state.settings.includeReadability) convertReadabilityToMarkdown();
+        if (state.settings.includeReadability) {
+          convertReadabilityToMarkdown();
+          deactivate();
+        }
         break;
       }
       case 'Escape': {
