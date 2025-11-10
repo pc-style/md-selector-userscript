@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Markdown Selector+Readability (with UI)
 // @namespace    md-selector
-// @version      0.2.0
+// @version      0.2.1
 // @description  Select DOM, navigate with arrows, convert to Markdown (Turndown+GFM), Readability mode, floating toolbar + settings.
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -544,6 +544,7 @@
     const clone = el.cloneNode(true);
     cleanClone(clone);
     const md = getTurndown().turndown(clone);
+    console.log('Generated Markdown (selection):', md);
     copyMarkdown(md, 'Copied selection as Markdown');
   }
 
@@ -565,6 +566,7 @@
       if (article.byline) md += `by ${article.byline}\n\n`;
       if (article.excerpt) md += `> ${article.excerpt}\n\n`;
       md += td.turndown(container);
+      console.log('Generated Markdown (Readability):', md);
       copyMarkdown(md, 'Copied Readability article as Markdown');
     } catch (err) {
       console.error(err);
@@ -593,20 +595,51 @@
       return;
     }
     try {
+      // Try Tampermonkey API first
       if (typeof GM_setClipboard === 'function') {
         GM_setClipboard(md, { type: 'text', mimetype: 'text/plain' });
-      } else if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(md);
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = md;
-        document.body.appendChild(ta);
-        ta.select(); document.execCommand('copy'); ta.remove();
+        showToast(okMsg);
+        return;
       }
-      showToast(okMsg);
+      // Fallback to navigator.clipboard
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(md).then(() => {
+          showToast(okMsg);
+        }).catch((err) => {
+          console.error('Clipboard write failed:', err);
+          fallbackCopy(md);
+        });
+        return;
+      }
+      // Final fallback
+      fallbackCopy(md);
     } catch (e) {
-      console.error(e);
-      showToast('Copy failed (see console)');
+      console.error('Copy error:', e);
+      fallbackCopy(md);
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        const success = document.execCommand('copy');
+        if (success) {
+          showToast(okMsg);
+        } else {
+          showToast('Copy failed (execCommand returned false)');
+        }
+      } catch (e) {
+        console.error('execCommand copy failed:', e);
+        showToast('Copy failed (see console)');
+      } finally {
+        ta.remove();
+      }
     }
   }
 
