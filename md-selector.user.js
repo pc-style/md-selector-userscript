@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Markdown Selector+Readability (with UI)
 // @namespace    md-selector
-// @version      0.2.1
+// @version      0.2.2
 // @description  Select DOM, navigate with arrows, convert to Markdown (Turndown+GFM), Readability mode, floating toolbar + settings.
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -9,6 +9,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
+// @grant        GM_openInTab
+// @connect      tampermonkey.net
 // @require      https://unpkg.com/turndown/dist/turndown.js
 // @require      https://unpkg.com/turndown-plugin-gfm/dist/turndown-plugin-gfm.js
 // @require      https://cdn.jsdelivr.net/gh/mozilla/readability@master/Readability.js
@@ -81,6 +83,7 @@
         <button data-act="toggle" title="Toggle selection (Alt+M)">Select</button>
         <button data-act="copy" title="Copy selection to Markdown (Enter)">Copy MD</button>
         <button data-act="readability" title="Readability → Markdown">Readability</button>
+        <button data-act="edit" title="Edit in VS Code (requires protocol handler)">Edit</button>
         <button data-act="settings" title="Settings">Settings</button>
       `;
       document.body.appendChild(toolbar);
@@ -348,6 +351,7 @@
     GM_registerMenuCommand('Toggle Selection', () => toggle());
     GM_registerMenuCommand('Copy Selection as Markdown', () => convertSelectionToMarkdown(state.current));
     GM_registerMenuCommand('Readability → Markdown', () => state.settings.includeReadability && convertReadabilityToMarkdown());
+    GM_registerMenuCommand('Edit in VS Code', () => openInEditor());
     GM_registerMenuCommand('Open Settings', () => openSettings());
   }
 
@@ -649,7 +653,22 @@
     if (act === 'toggle') toggle();
     if (act === 'copy') convertSelectionToMarkdown(state.current);
     if (act === 'readability' && state.settings.includeReadability) convertReadabilityToMarkdown();
+    if (act === 'edit') openInEditor();
     if (act === 'settings') openSettings();
+  }
+
+  // Open local script file in external editor via custom protocol
+  function openInEditor() {
+    // Adjust this path to where you keep the script locally
+    const localPath = 'c:/Users/adam0/projects/codex/md-selector.user.js';
+    // Use a custom protocol handler you register (e.g., vscode://file/PATH)
+    const protocolUrl = `vscode://file/${localPath.replace(/\\/g, '/')}`;
+    try {
+      GM_openInTab(protocolUrl, { active: true });
+    } catch (e) {
+      console.error('Failed to open editor:', e);
+      showToast('Editor open failed (see console)');
+    }
   }
 
   // Global hotkey: uses configurable settings
