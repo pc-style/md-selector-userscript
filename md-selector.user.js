@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Markdown Selector+Readability (with UI)
 // @namespace    md-selector
-// @version      0.2.3
+// @version      0.2.4
 // @description  Select DOM, navigate with arrows, convert to Markdown (Turndown+GFM), Readability mode, floating toolbar + settings.
 // @match        *://*/*
 // @grant        GM_addStyle
@@ -598,33 +598,50 @@
       showToast('Nothing to copy');
       return;
     }
+
+    // Always try all methods, show modal as last resort
+    let copied = false;
+
     try {
       // Try Tampermonkey API first
       if (typeof GM_setClipboard === 'function') {
-        GM_setClipboard(md, { type: 'text', mimetype: 'text/plain' });
+        GM_setClipboard(md, 'text');
         showToast(okMsg);
         return;
       }
-      // Fallback to navigator.clipboard
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(md).then(() => {
-          showToast(okMsg);
-        }).catch((err) => {
-          console.error('Clipboard write failed:', err);
-          alert('Clipboard write failed: ' + err.message);
-          fallbackCopy(md);
-        });
-        return;
-      }
-      // Final fallback
-      fallbackCopy(md);
     } catch (e) {
-      console.error('Copy error:', e);
-      alert('Copy error: ' + e.message);
-      fallbackCopy(md);
+      console.error('GM_setClipboard failed:', e);
     }
 
-    function fallbackCopy(text) {
+    // Try navigator.clipboard (async)
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(md).then(() => {
+        showToast(okMsg);
+        copied = true;
+      }).catch((err) => {
+        console.error('navigator.clipboard failed:', err);
+        // Try execCommand fallback
+        if (!tryExecCommandCopy(md)) {
+          showMarkdownModal(md);
+        } else {
+          showToast(okMsg);
+        }
+      });
+      return;
+    }
+
+    // Try execCommand
+    if (tryExecCommandCopy(md)) {
+      showToast(okMsg);
+      return;
+    }
+
+    // Last resort: show modal
+    showMarkdownModal(md);
+  }
+
+  function tryExecCommandCopy(text) {
+    try {
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
@@ -633,22 +650,53 @@
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      try {
-        const success = document.execCommand('copy');
-        if (success) {
-          showToast(okMsg);
-        } else {
-          alert('execCommand copy returned false');
-          showToast('Copy failed (execCommand returned false)');
-        }
-      } catch (e) {
-        console.error('execCommand copy failed:', e);
-        alert('execCommand copy failed: ' + e.message);
-        showToast('Copy failed (see console)');
-      } finally {
-        ta.remove();
-      }
+      const success = document.execCommand('copy');
+      ta.remove();
+      return success;
+    } catch (e) {
+      console.error('execCommand failed:', e);
+      return false;
     }
+  }
+
+  function showMarkdownModal(md) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed; inset: 0; z-index: 2147483647;
+      background: rgba(0,0,0,0.5); display: flex;
+      align-items: center; justify-content: center;
+    `;
+    const box = document.createElement('div');
+    box.style.cssText = `
+      background: #1f2937; color: #e5e7eb; padding: 1.5em;
+      border-radius: 12px; max-width: 90vw; max-height: 80vh;
+      display: flex; flex-direction: column; gap: 1em;
+    `;
+    const title = document.createElement('div');
+    title.textContent = 'Copy Markdown (clipboard failed)';
+    title.style.cssText = 'font-weight: 600; font-size: 1.1em;';
+    const ta = document.createElement('textarea');
+    ta.value = md;
+    ta.style.cssText = `
+      width: 600px; max-width: 100%; height: 400px;
+      background: #0b1220; color: #e5e7eb; border: 1px solid #374151;
+      border-radius: 6px; padding: 0.75em; font-family: ui-monospace, monospace;
+      font-size: 13px; resize: vertical;
+    `;
+    ta.readOnly = true;
+    const btn = document.createElement('button');
+    btn.textContent = 'Close';
+    btn.style.cssText = `
+      background: #374151; color: #e5e7eb; border: none;
+      padding: 0.5em 1em; border-radius: 6px; cursor: pointer;
+      align-self: flex-end;
+    `;
+    btn.onclick = () => modal.remove();
+    box.append(title, ta, btn);
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+    ta.select();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
   }
 
   function onToolbarClick(e) {
