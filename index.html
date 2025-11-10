@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Selector Test Page</title>
+  <style>
+    body { font: 16px/1.5 ui-sans-serif, system-ui, sans-serif; max-width: 800px; margin: 2em auto; padding: 0 1em; }
+    h1, h2, h3 { color: #1f2937; }
+    article { border: 1px solid #e5e7eb; border-radius: 8px; padding: 1em; margin: 1em 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1em; margin: 1em 0; }
+    .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1em; }
+    .highlight { background: #fef3c7; padding: 0.2em 0.4em; border-radius: 4px; }
+    .aside { float: right; width: 200px; margin: 0 0 1em 1em; background: #f3f4f6; padding: 1em; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+    th, td { border: 1px solid #e5e7eb; padding: 0.5em; text-align: left; }
+    th { background: #f9fafb; }
+    code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 4px; font-family: ui-monospace, monospace; }
+    pre { background: #1f2937; color: #e5e7eb; padding: 1em; border-radius: 6px; overflow-x: auto; }
+    pre code { background: none; padding: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Markdown Selector Test Page</h1>
+    <p>Use this page to test the <strong>Markdown Selector+Readability</strong> userscript.</p>
+  </header>
+
+  <main>
+    <section id="intro">
+      <h2>Introduction</h2>
+      <p>This page contains various HTML elements to verify selection, navigation, and Markdown conversion.</p>
+      <p>Try selecting <span class="highlight">highlighted spans</span>, nested structures, tables, and code blocks.</p>
+    </section>
+
+    <article id="article-1">
+      <h3>Article One</h3>
+      <p><em>Byline: Test Author</em></p>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Sed do eiusmod</strong> tempor incididunt ut labore et dolore magna aliqua.</p>
+      <blockquote>
+        <p>Blockquote: Use arrow keys to navigate parent/child elements.</p>
+      </blockquote>
+      <ul>
+        <li>First item</li>
+        <li>Second item with <a href="#">a link</a></li>
+        <li>Third item</li>
+      </ul>
+    </article>
+
+    <aside class="aside">
+      <h4>Sidebar</h4>
+      <p>Small floated element to test navigation into/outside containers.</p>
+      <button>Click me (won’t copy)</button>
+    </aside>
+
+    <section id="tables">
+      <h2>Table Example</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Supported</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Headers</td>
+            <td>✅</td>
+            <td>ATX style</td>
+          </tr>
+          <tr>
+            <td>Tables (GFM)</td>
+            <td>✅</td>
+            <td>If enabled</td>
+          </tr>
+          <tr>
+            <td>Code blocks</td>
+            <td>✅</td>
+            <td>Fenced</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="code">
+      <h2>Code Blocks</h2>
+      <pre><code>function example() {
+  console.log('Fenced code block');
+  return true;
+}</code></pre>
+      <p>Inline code: <code>console.log('hello')</code></p>
+    </section>
+
+    <section id="nested">
+      <h2>Nested Structures</h2>
+      <div class="grid">
+        <div class="card">
+          <h4>Card 1</h4>
+          <p>Content inside a grid item.</p>
+          <ul>
+            <li>Nested list</li>
+            <li>Another item</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Card 2</h4>
+          <p>Another card with <mark>marked text</mark>.</p>
+        </div>
+        <div class="card">
+          <h4>Card 3</h4>
+          <p>Final card.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="media">
+      <h2>Media and Ignored Elements</h2>
+      <p>Images and iframes should be ignored during conversion.</p>
+      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2RkZCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWc8L3RleHQ+PC9zdmc+" alt="Placeholder" />
+      <iframe src="about:blank" width="300" height="150" title="Ignored iframe"></iframe>
+    </section>
+
+    <footer>
+      <p><small>Footer: End of test page.</small></p>
+    </footer>
+  </main>
+</body>
+</html>
